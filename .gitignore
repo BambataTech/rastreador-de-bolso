@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Screenshots
+rastreador-de-bolso/screenshots/*.png
+
+# Tweet views
+rastreador-de-bolso/views/tweet.html
