@@ -23,11 +23,11 @@ def print_tweet(url, web_driver, output_path=os.path.join(CURR_PATH, 'screenshot
                 tweet_view.write(line.replace('{{ tweet_link }}', url))
 
     # Open tweet view
-    driver.get(
+    web_driver.get(
         'file://{}/views/tweet.html'.format(CURR_PATH))
 
     # Wait page to load element
-    element = WebDriverWait(driver, 10).until(
+    element = WebDriverWait(web_driver, 10).until(
         EC.presence_of_element_located((By.CLASS_NAME, tag))
     )
 
@@ -38,11 +38,11 @@ def print_tweet(url, web_driver, output_path=os.path.join(CURR_PATH, 'screenshot
     initial_y = location['y']
     final_x = location['x']+size['width']
     final_y = location['y']+size['height']
-    driver.set_window_size(900, final_y)
+    web_driver.set_window_size(900, final_y)
 
     # Save screenshot
     time.sleep(2)
-    driver.save_screenshot(output_path)
+    web_driver.save_screenshot(output_path)
 
     # Crop image
     im = Image.open(output_path)
