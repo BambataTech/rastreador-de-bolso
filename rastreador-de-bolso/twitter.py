@@ -16,16 +16,16 @@ from conf.settings import TWITTER_APP_KEY, TWITTER_APP_SECRET, TWITTER_OAUTH_TOK
 
 CURR_PATH = pathlib.Path(__file__).parent.absolute()
 TWEETS_FOLDER = os.path.join(CURR_PATH, 'screenshots')
-# twitter = Twython(TWITTER_APP_KEY, TWITTER_APP_SECRET,
-#                   TWITTER_OAUTH_TOKEN, TWITTER_OAUTH_TOKEN_SECRET)
+twitter = Twython(TWITTER_APP_KEY, TWITTER_APP_SECRET,
+                  TWITTER_OAUTH_TOKEN, TWITTER_OAUTH_TOKEN_SECRET)
 
 
-# def tweet_print(img_path, url):
-#     photo = open(img_path, 'rb')
-#     response = twitter.upload_media(media=photo)
-#     status = 'Jair Bolsonaro acabou de twittar: ' + url
-#     twitter.update_status(status=status,
-#                           media_ids=[response['media_id']])
+def tweet_print(img_path, url):
+    photo = open(img_path, 'rb')
+    response = twitter.upload_media(media=photo)
+    status = 'Jair Bolsonaro acabou de twittar: ' + url
+    twitter.update_status(status=status,
+                          media_ids=[response['media_id']])
 
 
 class PrintStream(TwythonStreamer):
@@ -48,7 +48,7 @@ class PrintStream(TwythonStreamer):
                 img_path = os.path.join(
                     TWEETS_FOLDER, str(data['id']) + '.png')
                 print_tweet(url, driver, img_path,)
-                # tweet_print(img_path, url)
+                tweet_print(img_path, url)
                 print('\ttext: ', data['text'])
                 print('\turl: ', url)
                 print('---------')

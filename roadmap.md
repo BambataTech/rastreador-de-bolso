@@ -6,6 +6,9 @@
 - [ ] Saber quando as contas rastreadas deram follow e unfollow
 - [ ] Tweetar
 - [ ] Salvar mídias de tweets
+  - [ ] Fotos
+  - [ ] Videos
+  - [ ] Gifs
 
 # Referencias
 

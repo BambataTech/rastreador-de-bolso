@@ -41,7 +41,7 @@ def print_tweet(url, web_driver, output_path=os.path.join(CURR_PATH, 'screenshot
     web_driver.set_window_size(900, final_y)
 
     # Save screenshot
-    time.sleep(2)
+    time.sleep(3)
     web_driver.save_screenshot(output_path)
 
     # Crop image
