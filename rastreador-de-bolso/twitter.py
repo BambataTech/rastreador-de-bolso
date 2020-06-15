@@ -3,6 +3,7 @@ import os
 import pathlib
 import json
 import logging
+import time
 
 from twython import Twython, TwythonStreamer
 
@@ -28,9 +29,18 @@ def tweet_print(img_path, url):
                           media_ids=[response['media_id']])
 
 
+def get_favorites(user_id=USER_ID):
+    return twitter.get_favorites(user_id=user_id, sort_by="source")
+
+
+def get_url(tweet_data):
+    return 'https://twitter.com/{}/status/{}'.format(
+        tweet_data['user']['screen_name'], tweet_data['id'])
+
+
 class PrintStream(TwythonStreamer):
     def on_success(self, data):
-        print('Receive tweet from: ', data['user']['id_str'])
+        # print('Receive tweet from: ', data['user']['id_str'])
         if(data['user']['id_str'] == USER_ID):
             try:
                 print('---------')
@@ -54,7 +64,6 @@ class PrintStream(TwythonStreamer):
                 print('---------')
             finally:
                 driver.close()
-                pass
 
     def on_error(self, status_code, data):
         print(status_code)
