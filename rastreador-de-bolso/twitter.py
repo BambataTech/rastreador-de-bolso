@@ -1,8 +1,10 @@
 
 import os
+import sys
 import pathlib
 import json
 import logging
+import coloredlogs
 import time
 
 from twython import Twython, TwythonStreamer
@@ -13,7 +15,6 @@ from selenium import webdriver
 from print_tweet import print_tweet
 
 from conf.settings import TWITTER_APP_KEY, TWITTER_APP_SECRET, TWITTER_OAUTH_TOKEN, TWITTER_OAUTH_TOKEN_SECRET, USER_ID
-
 
 CURR_PATH = pathlib.Path(__file__).parent.absolute()
 TWEETS_FOLDER = os.path.join(CURR_PATH, 'screenshots')
@@ -54,9 +55,17 @@ def get_url(tweet_data):
 class TwitterListener():
     def __init__(self, user_id=USER_ID):
         # Configure log
-        FORMAT = '%(asctime)-15s %(clientip)s %(user)-8s %(message)s'
-        logging.basicConfig(format=FORMAT)
+        coloredlogs.install()
+        logging.basicConfig()
         self.logger = logging.getLogger('TwitterListener')
+        self.logger.setLevel(logging.DEBUG)
+
+        # Create formatter, file handler and add they to the handlers
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+        fh = logging.FileHandler('twitter.log')
+        fh.setFormatter(formatter)
+        self.logger.addHandler(fh)
 
         self.user_id = user_id
         self.previous_tweets_ids = get_ids_from_tweets(
@@ -79,26 +88,30 @@ class TwitterListener():
         return []
 
     def print_new_tweets(self):
-        # Get webdriver
-        driver = webdriver.Chrome(options=self.chrome_options)
+        try:
+            # Get webdriver
+            driver = webdriver.Chrome(options=self.chrome_options)
 
-        new_tweets = self.get_new_tweets()
-        for tweet in new_tweets:
-            tweet_id = str(tweet['id'])
-            tweet_url = get_url(tweet)
+            new_tweets = self.get_new_tweets()
+            self.logger.debug('Get new tweets from API')
+            for tweet in new_tweets:
+                tweet_id = str(tweet['id'])
+                tweet_url = get_url(tweet)
 
-            # Get image
-            img_path = os.path.join(TWEETS_FOLDER, f'{tweet_id}.png')
-            print_tweet(tweet_url, driver, img_path,)
+                # Get image
+                img_path = os.path.join(TWEETS_FOLDER, f'{tweet_id}.png')
+                print_tweet(tweet_url, driver, img_path,)
+                self.logger.debug('Take a screenshot of tweet')
 
-            # Tweet image
-            tweet_print(img_path, tweet_url)
-
-            self.logger.info('New tweet')
-            self.logger.info(f'text: {tweet["text"]}')
-            self.logger.info(f'url: {tweet_url}')
-
-        driver.close()
+                # Tweet image
+                tweet_print(img_path, tweet_url)
+                self.logger.debug('Tweet the screenshot')
+                self.logger.info('New tweet %s', tweet_url)
+        except:
+            e = sys.exc_info()[0]
+            self.logger.error(e)
+        finally:
+            driver.close()
 
 
 class PrintStream(TwythonStreamer):

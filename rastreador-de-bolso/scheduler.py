@@ -1,19 +1,14 @@
 from twitter import TwitterListener
 
-
 import schedule
 import time
 import sys
 
-tl = TwitterListener()
+tl = TwitterListener(user_id='67404512')
 
 
 def monitoring_tweets():
-    try:
-        tl.print_new_tweets()
-    except:
-        e = sys.exc_info()[0]
-        print(e)
+    tl.print_new_tweets()
 
 
 schedule.every(15).seconds.do(monitoring_tweets)
