@@ -53,7 +53,7 @@ def get_url(tweet_data):
 
 
 class TwitterListener():
-    def __init__(self, user_id=USER_ID):
+    def __init__(self, user_id=USER_ID, search_base=40):
         # Configure log
         coloredlogs.install()
         logging.basicConfig()
@@ -67,25 +67,32 @@ class TwitterListener():
         fh.setFormatter(formatter)
         self.logger.addHandler(fh)
 
+        self.search_base = search_base
         self.user_id = user_id
         self.previous_tweets_ids = get_ids_from_tweets(
-            get_tweets(user_id=user_id))
+            get_tweets(user_id=user_id, count=search_base))
 
         # Set chrome options
         self.chrome_options = Options()
         self.chrome_options.add_argument('--headless')
 
     def get_new_tweets(self):
-        last_tweets = get_tweets(user_id=self.user_id)
+        last_tweets = get_tweets(user_id=self.user_id,
+                                 count=self.search_base)
         last_tweets_ids = get_ids_from_tweets(last_tweets)
 
-        diff_tweets = list(set(last_tweets_ids) -
-                           set(self.previous_tweets_ids))
+        diff_tweets = self._get_diff(last_tweets_ids, self.previous_tweets_ids)
+
         if diff_tweets:
             new_tweets = [last_tweets[i] for i in range(len(diff_tweets))]
             self.previous_tweets_ids = last_tweets_ids
             return new_tweets
         return []
+
+    def _get_diff(self, curr, old):
+        count = len(old)
+        return list(set(curr[:count//2]) -
+                    set(old))
 
     def print_new_tweets(self):
         try:
