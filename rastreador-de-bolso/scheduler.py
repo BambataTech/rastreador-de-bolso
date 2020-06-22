@@ -4,7 +4,7 @@ import schedule
 import time
 import sys
 
-tl = TwitterListener(user_id='67404512')
+tl = TwitterListener()
 
 
 def monitoring_tweets():

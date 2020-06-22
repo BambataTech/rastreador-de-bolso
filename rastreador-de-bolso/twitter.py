@@ -14,6 +14,8 @@ from selenium import webdriver
 
 from print_tweet import print_tweet
 
+from utils import retry
+
 from conf.settings import TWITTER_APP_KEY, TWITTER_APP_SECRET, TWITTER_OAUTH_TOKEN, TWITTER_OAUTH_TOKEN_SECRET, USER_ID
 
 CURR_PATH = pathlib.Path(__file__).parent.absolute()
@@ -22,10 +24,10 @@ twitter = Twython(TWITTER_APP_KEY, TWITTER_APP_SECRET,
                   TWITTER_OAUTH_TOKEN, TWITTER_OAUTH_TOKEN_SECRET)
 
 
-def tweet_print(img_path, url):
+def tweet_print(img_path, url, msg):
     photo = open(img_path, 'rb')
     response = twitter.upload_media(media=photo)
-    status = 'Jair Bolsonaro acabou de twittar: ' + url
+    status = f'{msg}: {url}'
     twitter.update_status(status=status,
                           media_ids=[response['media_id']])
 
@@ -36,7 +38,7 @@ def get_favorites(user_id=USER_ID, ):
 
 def get_tweets(user_id=USER_ID, count=20, screen_name=''):
     username = screen_name if screen_name else get_username_from_id(user_id)
-    return twitter.search(q=f'from:{username}', count=count, result_type='recent')['statuses']
+    return twitter.search(q=f'from:{username} include:nativeretweets', count=count, result_type='recent')['statuses']
 
 
 def get_ids_from_tweets(tweets):
@@ -100,22 +102,26 @@ class TwitterListener():
             driver = webdriver.Chrome(options=self.chrome_options)
 
             new_tweets = self.get_new_tweets()
-            self.logger.debug('Get new tweets from API')
             for tweet in new_tweets:
                 tweet_id = str(tweet['id'])
                 tweet_url = get_url(tweet)
 
                 # Get image
+                self.logger.info('New tweet %s', tweet_url)
                 img_path = os.path.join(TWEETS_FOLDER, f'{tweet_id}.png')
-                print_tweet(tweet_url, driver, img_path,)
+                retry(print_tweet, tweet_url, driver, output_path=img_path)
                 self.logger.debug('Take a screenshot of tweet')
 
                 # Tweet image
-                tweet_print(img_path, tweet_url)
+
+                tweet_msg = 'Jair Bolsonaro acabou de twittar'
+                self.logger.debug(tweet['retweeted'])
+                if('retweeted_status' in tweet):
+                    tweet_msg = 'Jair Bolsonaro acabou de retweetar'
+
+                tweet_print(img_path, tweet_url, tweet_msg)
                 self.logger.debug('Tweet the screenshot')
-                self.logger.info('New tweet %s', tweet_url)
-        except:
-            e = sys.exc_info()[0]
+        except Exception as e:
             self.logger.error(e)
         finally:
             driver.close()

@@ -16,7 +16,12 @@ from PIL import Image
 CURR_PATH = pathlib.Path(__file__).parent.absolute()
 
 
-def print_tweet(url, web_driver, output_path=os.path.join(CURR_PATH, 'screenshots/tweet.png'), tag='twitter-tweet'):
+def print_tweet(url, web_driver, *args, **kwargs):
+    if kwargs.get('output_path'):
+        output_path = kwargs.get('output_path')
+    else:
+        output_path = os.path.join(CURR_PATH, 'screenshots/tweet.png')
+
     with open(os.path.join(CURR_PATH, 'templates/tweet.html')) as tweet_template:
         with open(os.path.join(CURR_PATH, 'views/tweet.html'), 'w') as tweet_view:
             for line in tweet_template:
@@ -28,7 +33,7 @@ def print_tweet(url, web_driver, output_path=os.path.join(CURR_PATH, 'screenshot
 
     # Wait page to load element
     element = WebDriverWait(web_driver, 10).until(
-        EC.presence_of_element_located((By.CLASS_NAME, tag))
+        EC.presence_of_element_located((By.CLASS_NAME, 'twitter-tweet'))
     )
 
     # Change window size
