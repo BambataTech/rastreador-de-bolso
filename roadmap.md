@@ -4,6 +4,7 @@
 - [x] Saber quando as contas rastreadas tweetaram
 - [ ] Saber quando as contas rastreadas deram like
 - [ ] Saber quando as contas rastreadas deram follow e unfollow
+- [ ] Salvar dados dos tweets em um csv
 - [x] Tweetar
 - [ ] Salvar mídias de tweets
   - [ ] Fotos
