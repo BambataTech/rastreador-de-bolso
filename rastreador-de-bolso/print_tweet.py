@@ -32,21 +32,23 @@ def print_tweet(url, web_driver, *args, **kwargs):
         'file://{}/views/tweet.html'.format(CURR_PATH))
 
     # Wait page to load element
+    time.sleep(5)
     element = WebDriverWait(web_driver, 10).until(
         EC.presence_of_element_located((By.CLASS_NAME, 'twitter-tweet'))
     )
 
     # Change window size
     location = element.location
+
     size = element.size
     initial_x = location['x']
     initial_y = location['y']
     final_x = location['x']+size['width']
     final_y = location['y']+size['height']
+
     web_driver.set_window_size(900, final_y)
 
     # Save screenshot
-    time.sleep(3)
     web_driver.save_screenshot(output_path)
 
     # Crop image
