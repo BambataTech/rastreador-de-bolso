@@ -50,8 +50,14 @@ def get_username_from_id(user_id=USER_ID):
 
 
 def get_url(tweet_data):
-    return 'https://twitter.com/{}/status/{}'.format(
-        tweet_data['user']['screen_name'], tweet_data['id'])
+    user = tweet_data['user']['screen_name']
+    tweet_id = tweet_data['id']
+
+    if 'retweeted_status' in tweet_data:
+        tweet_id = tweet_data['retweeted_status']['id']
+        print(tweet_id)
+
+    return f'https://twitter.com/{user}/status/{tweet_id}'
 
 
 class TwitterListener():
@@ -115,7 +121,8 @@ class TwitterListener():
                 # Tweet image
 
                 tweet_msg = 'Jair Bolsonaro acabou de twittar'
-                self.logger.debug(tweet['retweeted'])
+                self.logger.debug(
+                    f'Is a retweet: {"retweeted_status" in tweet}')
                 if('retweeted_status' in tweet):
                     tweet_msg = 'Jair Bolsonaro acabou de retweetar'
 

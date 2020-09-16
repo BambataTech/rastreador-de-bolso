@@ -2,10 +2,13 @@
 
 - [x] Printar tweets
 - [x] Saber quando as contas rastreadas tweetaram
+- [x] Identificar e tratar retweets
 - [ ] Saber quando as contas rastreadas deram like
 - [ ] Saber quando as contas rastreadas deram follow e unfollow
 - [ ] Salvar dados dos tweets em um csv
+- [ ] Baixar os dados antigos
 - [x] Tweetar
+- [ ] Pagina web para explorar o csv
 - [ ] Salvar mídias de tweets
   - [ ] Fotos
   - [ ] Videos
