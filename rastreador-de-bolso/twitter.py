@@ -1,10 +1,8 @@
 
 import os
 import sys
-import pathlib
 import json
 import logging
-import coloredlogs
 import time
 
 from twython import Twython, TwythonStreamer
@@ -18,8 +16,7 @@ from utils import retry
 
 from conf.settings import TWITTER_APP_KEY, TWITTER_APP_SECRET, TWITTER_OAUTH_TOKEN, TWITTER_OAUTH_TOKEN_SECRET, USER_ID
 
-CURR_PATH = pathlib.Path(__file__).parent.absolute()
-TWEETS_FOLDER = os.path.join(CURR_PATH, 'screenshots')
+
 twitter = Twython(TWITTER_APP_KEY, TWITTER_APP_SECRET,
                   TWITTER_OAUTH_TOKEN, TWITTER_OAUTH_TOKEN_SECRET)
 
@@ -41,6 +38,19 @@ def get_tweets(user_id=USER_ID, count=20, screen_name=''):
     return twitter.search(q=f'from:{username} include:nativeretweets', count=count, result_type='recent')['statuses']
 
 
+def update_status(status):
+    twitter.update_status(status=status)
+
+
+def get_timeline():
+    return twitter.get_home_timeline()
+
+
+def get_friends_ids(user_id=USER_ID):
+    response = twitter.get_friends_ids(user_id=user_id)
+    return response['ids']
+
+
 def get_ids_from_tweets(tweets):
     return [tweet['id'] for tweet in tweets]
 
@@ -58,108 +68,3 @@ def get_url(tweet_data):
         print(tweet_id)
 
     return f'https://twitter.com/{user}/status/{tweet_id}'
-
-
-class TwitterListener():
-    def __init__(self, user_id=USER_ID, search_base=40):
-        # Configure log
-        coloredlogs.install()
-        logging.basicConfig()
-        self.logger = logging.getLogger('TwitterListener')
-        self.logger.setLevel(logging.DEBUG)
-
-        # Create formatter, file handler and add they to the handlers
-        formatter = logging.Formatter(
-            '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        fh = logging.FileHandler('twitter.log')
-        fh.setFormatter(formatter)
-        self.logger.addHandler(fh)
-
-        self.search_base = search_base
-        self.user_id = user_id
-        self.previous_tweets_ids = get_ids_from_tweets(
-            get_tweets(user_id=user_id, count=search_base))
-
-        # Set chrome options
-        self.chrome_options = Options()
-        self.chrome_options.add_argument('--headless')
-
-    def get_new_tweets(self):
-        last_tweets = get_tweets(user_id=self.user_id,
-                                 count=self.search_base)
-        last_tweets_ids = get_ids_from_tweets(last_tweets)
-
-        diff_tweets = self._get_diff(last_tweets_ids, self.previous_tweets_ids)
-
-        if diff_tweets:
-            new_tweets = [last_tweets[i] for i in range(len(diff_tweets))]
-            self.previous_tweets_ids = last_tweets_ids
-            return new_tweets
-        return []
-
-    def _get_diff(self, curr, old):
-        count = len(old)
-        return list(set(curr[:count//2]) -
-                    set(old))
-
-    def print_new_tweets(self):
-        try:
-            # Get webdriver
-            driver = webdriver.Chrome(options=self.chrome_options)
-
-            new_tweets = self.get_new_tweets()
-            for tweet in new_tweets:
-                tweet_id = str(tweet['id'])
-                tweet_url = get_url(tweet)
-
-                # Get image
-                self.logger.info('New tweet %s', tweet_url)
-                img_path = os.path.join(TWEETS_FOLDER, f'{tweet_id}.png')
-                retry(print_tweet, tweet_url, driver, output_path=img_path)
-                self.logger.debug('Take a screenshot of tweet')
-
-                # Tweet image
-
-                tweet_msg = 'Jair Bolsonaro acabou de twittar'
-                self.logger.debug(
-                    f'Is a retweet: {"retweeted_status" in tweet}')
-                if('retweeted_status' in tweet):
-                    tweet_msg = 'Jair Bolsonaro acabou de retweetar'
-
-                tweet_print(img_path, tweet_url, tweet_msg)
-                self.logger.debug('Tweet the screenshot')
-        except Exception as e:
-            self.logger.error(e)
-        finally:
-            driver.close()
-
-
-class PrintStream(TwythonStreamer):
-    def on_success(self, data):
-        print('Receive tweet from: ', data['user']['id_str'])
-        if(data['user']['id_str'] == USER_ID):
-            try:
-                print('---------')
-                url = 'https://twitter.com/{}/status/{}'.format(
-                    data['user']['screen_name'], data['id'])
-
-                # Set chrome options
-                chrome_options = Options()
-                chrome_options.add_argument('--headless')
-
-                # Get webdriver
-                driver = webdriver.Chrome(options=chrome_options)
-
-                # Get image
-                img_path = os.path.join(
-                    TWEETS_FOLDER, str(data['id']) + '.png')
-                print_tweet(url, driver, img_path,)
-                tweet_print(img_path, url)
-                print('\ttext: ', data['text'])
-                print('\turl: ', url)
-                print('---------')
-            finally:
-                driver.close()
-
-    def on_error(self, status_code, data):
-        print(status_code)
