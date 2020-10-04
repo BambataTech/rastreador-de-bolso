@@ -1,0 +1,27 @@
+version: '3.1'
+
+services:
+  db:
+    container_name: bolsona-archive-db
+    image: mongo:latest
+    restart: always
+    ports:
+      - 27017:27017
+  db-interface:
+    container_name: bolsona-archive-db-interface
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_SERVER: db
+  db-init:
+    container_name: db-init
+    build: ./archive-init/
+    depends_on:
+      - db
+  backend:
+    container_name: bolsona-archive-backend
+    build: ./archive-backend
+    ports:
+      - 3000:3000
