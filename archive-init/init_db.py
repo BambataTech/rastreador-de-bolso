@@ -32,4 +32,4 @@ with open('/data/jairbolsonaro.json') as tweets_file:
     tweets = [update_fields(t) for t in tweets]
     tweets_db.insert_many(tweets)
 
-tweets_db.create_index([("text", TEXT)], name="search")
+tweets_db.create_index([("full_text", TEXT)], name="search")
