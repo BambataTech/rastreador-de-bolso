@@ -28,6 +28,7 @@ class TwitterListener():
         # Set chrome options
         self.chrome_options = Options()
         self.chrome_options.add_argument('--headless')
+        self.chrome_options.add_argument("--no-sandbox")
 
         # Create formatter, file handler and add they to the handlers
         formatter = logging.Formatter(
