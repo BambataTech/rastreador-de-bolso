@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 # Screenshots
-rastreador-de-bolso/screenshots/*.png
+rastreador-de-bolso/screenshots/**/*.png
 
 # Tweet views
 rastreador-de-bolso/views/tweet.html

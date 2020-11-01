@@ -9,7 +9,7 @@ export default ({ search }) => {
   useEffect(() => {
     const fetchData = async () => {
       const result = await axios.get(
-        `http://ec2-54-221-110-139.compute-1.amazonaws.com:3000/tweets?search=${search}`
+        `http://localhost:3000/tweets?search=${search}`
       );
       setTweets(result.data);
     };

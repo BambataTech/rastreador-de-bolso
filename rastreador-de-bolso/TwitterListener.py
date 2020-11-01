@@ -5,14 +5,16 @@ import logging
 import coloredlogs
 import os
 import pathlib
-
+import time
 
 import twitter as tt
 from utils import retry
-from conf.settings import USER_ID
+from fetch_likes import get_user_likes
+from conf.settings import USER_ID, USERNAME, PASSWORD
 
 CURR_PATH = pathlib.Path(__file__).parent.absolute()
 TWEETS_FOLDER = os.path.join(CURR_PATH, 'screenshots')
+LIKED_FOLDER = os.path.join(CURR_PATH, 'screenshots', 'liked')
 
 
 class TwitterListener():
@@ -23,6 +25,10 @@ class TwitterListener():
         self.logger = logging.getLogger('TwitterListener')
         self.logger.setLevel(logging.DEBUG)
 
+        # Set chrome options
+        self.chrome_options = Options()
+        self.chrome_options.add_argument('--headless')
+
         # Create formatter, file handler and add they to the handlers
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -32,13 +38,12 @@ class TwitterListener():
 
         self.search_base = search_base
         self.user_id = user_id
+        self.target = tt.get_username_from_id(user_id)
         self.previous_tweets_ids = tt.get_ids_from_tweets(
             tt.get_tweets(user_id=user_id, count=search_base))
         self.previous_friends = tt.get_friends_ids(user_id=user_id)
-
-        # Set chrome options
-        self.chrome_options = Options()
-        self.chrome_options.add_argument('--headless')
+        self.previous_likes_ids = get_user_likes(
+            USERNAME, PASSWORD, self.target, count=search_base/2)
 
     def _get_new_tweets(self):
         last_tweets = tt.get_tweets(user_id=self.user_id,
@@ -51,7 +56,21 @@ class TwitterListener():
         if diff_tweets:
             new_tweets = [last_tweets[i] for i in range(len(diff_tweets))]
             self.previous_tweets_ids = last_tweets_ids
+            new_tweets.reverse()
             return new_tweets
+        return []
+
+    def _get_new_likes(self):
+        new_likes_ids = get_user_likes(
+            USERNAME, PASSWORD, self.target, count=self.search_base/2)
+        diff_tweets = self._get_new_diff(
+            new_likes_ids, self.previous_likes_ids)
+
+        if diff_tweets:
+            self.previous_likes_ids = new_likes_ids
+            diff_tweets.reverse()
+            return diff_tweets
+
         return []
 
     def _get_new_diff(self, curr, old):
@@ -91,7 +110,31 @@ class TwitterListener():
         except Exception as e:
             self.logger.error(e)
         finally:
-            driver.close()
+            if driver:
+                driver.close()
+
+    def print_new_likes(self):
+        try:
+            new_likes = self._get_new_likes()
+            driver = webdriver.Chrome(options=self.chrome_options)
+            for t_id in new_likes:
+                t_url = f'https://twitter.com/{self.target}/status/{t_id}'
+
+                # Get image
+                self.logger.info('New like %s', t_url)
+                img_path = os.path.join(LIKED_FOLDER, f'{t_id}.png')
+                retry(tt.print_tweet, t_url, driver, output_path=img_path)
+                self.logger.debug('Take a screenshot of tweet')
+
+                # Tweet image
+                t_msg = 'Jair Bolsonaro acabou de curtir esse tweet'
+                tt.tweet_print(img_path, t_url, t_msg)
+                self.logger.debug('Tweet the screenshot')
+        except Exception as e:
+            self.logger.error(e)
+        finally:
+            if driver:
+                driver.close()
 
     def watch_friends(self):
         try:
