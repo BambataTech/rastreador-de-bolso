@@ -21,7 +21,7 @@ id_selector = 'article > div > div.css-1dbjc4n > div:nth-child(1) > div > div  >
     > div.css-1dbjc4n.r-zl2h9q > div > div:nth-child(1) > a'
 
 
-def _login(driver, username, password, delay):
+def login(driver, username, password, delay=1):
     login_url = 'https://twitter.com/login'
     driver.get(login_url)
     usernameInput = WebDriverWait(driver, delay).until(
@@ -46,18 +46,8 @@ def _filter_unique(l):
     return list(dict.fromkeys(l))
 
 
-def get_user_likes(username, password, target, count=20, delay=1):
+def get_user_likes(driver, target, count=20, delay=1):
     try:
-        # Set chrome options
-        chrome_options = Options()
-        chrome_options.add_argument('--headless')
-        chrome_options.add_argument("--no-sandbox")
-
-        # Get webdriver
-        driver = webdriver.Chrome(options=chrome_options)
-
-        _login(driver, username, password, delay)
-
         driver.get(f'https://twitter.com/{target}/likes')
         time.sleep(delay)
 
@@ -77,8 +67,6 @@ def get_user_likes(username, password, target, count=20, delay=1):
     except:
         print('Something goes wrong')
         print(sys.exc_info()[1])
-    finally:
-        driver.quit()
 
 
 if __name__ == "__main__":
@@ -88,6 +76,16 @@ if __name__ == "__main__":
 
     target = sys.argv[1]
     start_time = time.time()
-    liked_tweets = get_user_likes(USERNAME, PASSWORD, target)
+
+    # Set chrome options
+    chrome_options = Options()
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument("--no-sandbox")
+
+    # Get webdriver
+    driver = webdriver.Chrome(options=chrome_options)
+
+    login(driver, USERNAME, PASSWORD, target)
+    liked_tweets = get_user_likes(driver, target)
     print("--- %s seconds ---" % (time.time() - start_time))
     print(liked_tweets)

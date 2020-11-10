@@ -75,5 +75,3 @@ if __name__ == "__main__":
     except:
         print('Something goes wrong')
         print(sys.exc_info()[1])
-    finally:
-        driver.quit()

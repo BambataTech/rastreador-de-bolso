@@ -9,7 +9,7 @@ import time
 
 import twitter as tt
 from utils import retry
-from fetch_likes import get_user_likes
+from fetch_likes import get_user_likes, login
 from conf.settings import USER_ID, USERNAME, PASSWORD
 
 CURR_PATH = pathlib.Path(__file__).parent.absolute()
@@ -26,9 +26,11 @@ class TwitterListener():
         self.logger.setLevel(logging.DEBUG)
 
         # Set chrome options
-        self.chrome_options = Options()
-        self.chrome_options.add_argument('--headless')
-        self.chrome_options.add_argument("--no-sandbox")
+        chrome_options = Options()
+        chrome_options.add_argument('--headless')
+        chrome_options.add_argument("--no-sandbox")
+        self.driver = webdriver.Chrome(options=chrome_options)
+        login(self.driver, USERNAME, PASSWORD)
 
         # Create formatter, file handler and add they to the handlers
         formatter = logging.Formatter(
@@ -44,7 +46,7 @@ class TwitterListener():
             tt.get_tweets(user_id=user_id, count=search_base))
         self.previous_friends = tt.get_friends_ids(user_id=user_id)
         self.previous_likes_ids = get_user_likes(
-            USERNAME, PASSWORD, self.target, count=search_base/2)
+            self.driver, self.target, count=search_base/2)
 
     def _get_new_tweets(self):
         last_tweets = tt.get_tweets(user_id=self.user_id,
@@ -63,7 +65,7 @@ class TwitterListener():
 
     def _get_new_likes(self):
         new_likes_ids = get_user_likes(
-            USERNAME, PASSWORD, self.target, count=self.search_base/2)
+            self.driver, self.target, count=self.search_base/2)
         diff_tweets = self._get_new_diff(
             new_likes_ids, self.previous_likes_ids)
 
@@ -84,9 +86,6 @@ class TwitterListener():
 
     def print_new_tweets(self):
         try:
-            # Get webdriver
-            driver = webdriver.Chrome(options=self.chrome_options)
-
             new_tweets = self._get_new_tweets()
             for tweet in new_tweets:
                 tweet_id = str(tweet['id'])
@@ -95,7 +94,8 @@ class TwitterListener():
                 # Get image
                 self.logger.info('New tweet %s', tweet_url)
                 img_path = os.path.join(TWEETS_FOLDER, f'{tweet_id}.png')
-                retry(tt.print_tweet, tweet_url, driver, output_path=img_path)
+                retry(tt.print_tweet, tweet_url,
+                      self.driver, output_path=img_path)
                 self.logger.debug('Take a screenshot of tweet')
 
                 # Tweet image
@@ -110,21 +110,17 @@ class TwitterListener():
                 self.logger.debug('Tweet the screenshot')
         except Exception as e:
             self.logger.error(e)
-        finally:
-            if driver:
-                driver.close()
 
     def print_new_likes(self):
         try:
             new_likes = self._get_new_likes()
-            driver = webdriver.Chrome(options=self.chrome_options)
             for t_id in new_likes:
                 t_url = f'https://twitter.com/{self.target}/status/{t_id}'
 
                 # Get image
                 self.logger.info('New like %s', t_url)
                 img_path = os.path.join(LIKED_FOLDER, f'{t_id}.png')
-                retry(tt.print_tweet, t_url, driver, output_path=img_path)
+                retry(tt.print_tweet, t_url, self.driver, output_path=img_path)
                 self.logger.debug('Take a screenshot of tweet')
 
                 # Tweet image
@@ -133,9 +129,6 @@ class TwitterListener():
                 self.logger.debug('Tweet the screenshot')
         except Exception as e:
             self.logger.error(e)
-        finally:
-            if driver:
-                driver.close()
 
     def watch_friends(self):
         try:
