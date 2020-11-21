@@ -30,8 +30,6 @@ class TwitterListener():
         chrome_options.add_argument('--headless')
         chrome_options.add_argument("--no-sandbox")
         self.driver = webdriver.Chrome(options=chrome_options)
-        login(self.driver, USERNAME, PASSWORD)
-
         # Create formatter, file handler and add they to the handlers
         formatter = logging.Formatter(
             '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -42,13 +40,18 @@ class TwitterListener():
         self.search_base = search_base
         self.user_id = user_id
         self.target = tt.get_username_from_id(user_id)
-        self.previous_tweets_ids = tt.get_ids_from_tweets(
-            tt.get_tweets(user_id=user_id, count=search_base))
-        self.previous_friends = tt.get_friends_ids(user_id=user_id)
-        self.previous_likes_ids = get_user_likes(
-            self.driver, self.target, count=search_base/2)
+
+        self.is_logged = False,
+        self.has_previous_tweets = False
+        self.has_previous_friends = False
+        self.has_previous_likes = False
 
     def _get_new_tweets(self):
+        if(not self.has_previous_tweets):
+            self.previous_tweets_ids = tt.get_ids_from_tweets(
+                tt.get_tweets(user_id=self.user_id, count=self.search_base))
+            self.has_previous_tweets = True
+
         last_tweets = tt.get_tweets(user_id=self.user_id,
                                     count=self.search_base)
         last_tweets_ids = tt.get_ids_from_tweets(last_tweets)
@@ -64,8 +67,18 @@ class TwitterListener():
         return []
 
     def _get_new_likes(self):
+        count = self.search_base/2
+
+        if(not self.is_logged):
+            login(self.driver, USERNAME, PASSWORD)
+            self.is_logged = True
+        if(not self.has_previous_likes):
+            self.previous_likes_ids = get_user_likes(
+                self.driver, self.target, count=count)
+            self.has_previous_likes = True
+
         new_likes_ids = get_user_likes(
-            self.driver, self.target, count=self.search_base/2)
+            self.driver, self.target, count=count)
         diff_tweets = self._get_new_diff(
             new_likes_ids, self.previous_likes_ids)
 
@@ -132,6 +145,11 @@ class TwitterListener():
 
     def watch_friends(self):
         try:
+            if(not self.has_previous_friends):
+                self.previous_friends = tt.get_friends_ids(
+                    user_id=self.user_id)
+                self.has_previous_friends = True
+
             last_friends = tt.get_friends_ids()
 
             new_friends = self._get_abs_diff(

@@ -10,7 +10,7 @@ tl = TwitterListener()
 
 def monitor():
     tl.watch_friends()
-    tl.print_new_likes()
+    # tl.print_new_likes()
     tl.print_new_tweets()
 
 
